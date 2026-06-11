@@ -11,9 +11,9 @@ app = Flask(__name__)
 
 # ── Constantes ────────────────────────────────────────────────────────────────
 
-COLONNES_REQUISES   = {'nom_serie', 'valeur'}
-COLONNES_VALIDES    = {'nom_serie', 'valeur', 'categorie', 'date_mesure'}
-TAILLE_MAX_OCTETS   = 5 * 1024 * 1024  # 5 Mo
+COLONNES_REQUISES = {'nom_serie', 'valeur'}
+COLONNES_VALIDES  = {'nom_serie', 'valeur', 'categorie', 'date_mesure'}
+TAILLE_MAX_OCTETS = 5 * 1024 * 1024  # 5 Mo
 
 # ── Connexion MySQL ───────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ def get_connection():
         database=os.getenv('DB_NAME')
     )
 
-# ── Route : Upload CSV ────────────────────────────────────────────────────────
+# ── Route 1 : Upload CSV ──────────────────────────────────────────────────────
 
 @app.route('/upload/csv', methods=['POST'])
 def upload_csv():
@@ -66,8 +66,8 @@ def upload_csv():
     # 4. Nettoyer les données
     df = df[[c for c in df.columns if c in COLONNES_VALIDES]]
 
-    df['valeur']      = pd.to_numeric(df['valeur'], errors='coerce')
-    lignes_invalides  = int(df['valeur'].isna().sum())
+    df['valeur']     = pd.to_numeric(df['valeur'], errors='coerce')
+    lignes_invalides = int(df['valeur'].isna().sum())
 
     df.dropna(subset=['valeur'], inplace=True)
 
@@ -87,7 +87,7 @@ def upload_csv():
                 (
                     str(row['nom_serie']),
                     float(row['valeur']),
-                    str(row['categorie'])  if 'categorie'   in df.columns else None,
+                    str(row['categorie'])   if 'categorie'   in df.columns else None,
                     str(row['date_mesure']) if 'date_mesure' in df.columns else None,
                 )
             )
@@ -102,12 +102,44 @@ def upload_csv():
 
     # 6. Réponse succès
     return jsonify({
-        'statut'                  : 'success',
-        'lignes_inserees'         : insertions,
+        'statut'                   : 'success',
+        'lignes_inserees'          : insertions,
         'lignes_invalides_ignorees': lignes_invalides,
-        'message'                 : f'{insertions} ligne(s) chargée(s) dans la table donnees'
+        'message'                  : f'{insertions} ligne(s) chargée(s) dans la table donnees'
     }), 201
 
+# ── Route 2 : Lister les séries (bonus) ──────────────────────────────────────
+
+@app.route('/upload/series', methods=['GET'])
+def list_series():
+    """Retourne la liste des séries chargées et leur nombre de points."""
+    try:
+        conn   = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            'SELECT nom_serie, COUNT(*) AS n, MIN(date_mesure), MAX(date_mesure)'
+            ' FROM donnees GROUP BY nom_serie ORDER BY nom_serie'
+        )
+
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        series = [
+            {
+                'serie'    : r[0],
+                'n_points' : r[1],
+                'debut'    : str(r[2]),
+                'fin'      : str(r[3])
+            }
+            for r in rows
+        ]
+
+        return jsonify({'series': series, 'total': len(series)})
+
+    except Exception as e:
+        return jsonify({'erreur': 'Erreur base de données', 'detail': str(e)}), 500
 
 # ── Lancement ─────────────────────────────────────────────────────────────────
 
