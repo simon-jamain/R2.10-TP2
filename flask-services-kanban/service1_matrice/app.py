@@ -3,8 +3,8 @@ import numpy as np
 
 app = Flask(__name__)
 
-def parse_matrix(data, key):     
-    """Convertit une liste de listes en tableau NumPy."""     
+def parse_matrix(data, key):
+    """Convertit une liste de listes en tableau NumPy."""
     try:
         return np.array(data[key], dtype=float)
     except (KeyError, ValueError) as e:
@@ -12,7 +12,6 @@ def parse_matrix(data, key):
 
 @app.route('/matrices/add', methods=['POST'])
 def add_matrices():
-    """Additionne deux matrices A et B de mêmes dimensions."""
     data = request.get_json()
 
     try:
@@ -20,18 +19,14 @@ def add_matrices():
         B = parse_matrix(data, 'B')
 
         if A.shape != B.shape:
-            return jsonify({
-                'erreur': f'Dimensions incompatibles : {A.shape} ≠ {B.shape}'
-            }), 400
+            return jsonify({'erreur': 'Dimensions incompatibles'}), 400
 
-        return jsonify({
-            'operation': 'addition',
-            'resultat': (A + B).tolist()
-        }), 200
+        return jsonify({'operation': 'addition', 'resultat': (A + B).tolist()})
 
     except (ValueError, TypeError) as e:
         return jsonify({'erreur': str(e)}), 400
-      
+
+
 @app.route('/matrices/multiply', methods=['POST'])
 def multiply_matrices():
     data = request.get_json()
@@ -48,7 +43,8 @@ def multiply_matrices():
 
     except (ValueError, TypeError) as e:
         return jsonify({'erreur': str(e)}), 400
-      
+
+
 @app.route('/matrices/transpose', methods=['POST'])
 def transpose_matrix():
     data = request.get_json()
@@ -57,6 +53,23 @@ def transpose_matrix():
         A = parse_matrix(data, 'A')
         result = A.T.tolist()
         return jsonify({'operation': 'transposee', 'resultat': result})
+
+    except (ValueError, TypeError) as e:
+        return jsonify({'erreur': str(e)}), 400
+
+
+@app.route('/matrices/determinant', methods=['POST'])
+def determinant_matrix():
+    data = request.get_json()
+
+    try:
+        A = parse_matrix(data, 'A')
+
+        if A.shape[0] != A.shape[1]:
+            return jsonify({'erreur': 'La matrice doit etre carree'}), 400
+
+        det = np.linalg.det(A)
+        return jsonify({'operation': 'determinant', 'resultat': round(det, 6)})
 
     except (ValueError, TypeError) as e:
         return jsonify({'erreur': str(e)}), 400
