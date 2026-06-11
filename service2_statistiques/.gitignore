@@ -1,8 +1,22 @@
-# Ignorer l'environnement virtuel Python
+# Environnement virtuel
 venv/
+env/
 .venv/
-Env/
 
-# Ignorer les fichiers de cache Python
+# Fichiers Python compilés
 __pycache__/
 *.pyc
+*.pyo
+
+# Fichiers sensibles
+.env
+*.env
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
