@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tests Service 3</title>
+</head>
+<body>
+    <h1>Tests Service 3 — Stats MySQL</h1>
+
+    <!-- Test 1 : on envoie le nom d'une série et on récupère ses statistiques -->
+    <h2>Test 1 — Décrire une série</h2>
+    <!-- Champ texte pour saisir le nom de la série -->
+    <input type="text" id="serie" value="serie_A" />
+    <!-- Bouton qui déclenche la fonction testerDescribe() -->
+    <button onclick="testerDescribe()">Tester</button>
+    <!-- Zone d'affichage du résultat JSON -->
+    <pre id="resultat1"></pre>
+
+    <!-- Test 2 : on envoie deux séries et on calcule leur corrélation -->
+    <h2>Test 2 — Corrélation entre deux séries</h2>
+    <!-- Champs pour saisir les deux séries à comparer -->
+    <input type="text" id="serie_x" value="serie_A" />
+    <input type="text" id="serie_y" value="serie_B" />
+    <!-- Bouton qui déclenche la fonction testerCorrelation() -->
+    <button onclick="testerCorrelation()">Tester</button>
+    <!-- Zone d'affichage du résultat JSON -->
+    <pre id="resultat2"></pre>
+
+    <script>
+        // Test 1 : appel de la route GET /db/stats/describe
+        async function testerDescribe() {
+            // On récupère la valeur saisie dans le champ texte
+            const serie = document.getElementById("serie").value;
+
+            // On envoie une requête GET au service Flask avec le nom de la série en paramètre URL
+            const res = await fetch("http://localhost:5003/db/stats/describe?serie=" + serie);
+
+            // On convertit la réponse en objet JSON
+            const data = await res.json();
+
+            // On affiche le résultat formaté dans la balise <pre>
+            document.getElementById("resultat1").textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Test 2 : appel de la route GET /db/stats/correlation
+        async function testerCorrelation() {
+            // On récupère les deux séries saisies
+            const x = document.getElementById("serie_x").value;
+            const y = document.getElementById("serie_y").value;
+
+            // On envoie une requête GET avec les deux séries en paramètres URL
+            const res = await fetch("http://localhost:5003/db/stats/correlation?serie_x=" + x + "&serie_y=" + y);
+
+            // On convertit la réponse en objet JSON
+            const data = await res.json();
+
+            // On affiche le résultat formaté dans la balise <pre>
+            document.getElementById("resultat2").textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
