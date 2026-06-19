@@ -23,7 +23,7 @@ def db_describe():
 
         result = {
             'serie'      : nom_serie,
-            'n'          : int(len(values)),
+            'n'          : int(len( )),
             'moyenne'    : round(float(np.mean(values)), 4),
             'mediane'    : round(float(np.median(values)), 4),
             'ecart_type' : round(float(np.std(values, ddof=1)), 4),

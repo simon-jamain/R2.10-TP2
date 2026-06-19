@@ -1,0 +1,27 @@
+# Environnements virtuels Python
+venv/
+env/
+.venv/
+
+# Fichiers de configuration sensibles (mots de passe MySQL)
+.env
+*.env
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+
+# Bibliothèques C compilées (Service 5)
+lib/*.so
+lib/*.dll
+lib/*.dylib
+
+# Fichiers d'éditeur
+.vscode/
+.idea/
+*.swp
+
+# Fichiers système
+.DS_Store
+Thumbs.db

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tests Service 4</title>
+</head>
+<body>
+    <h1>Tests Service 4 — Upload CSV vers MySQL</h1>
+
+    <!-- Test 1 : envoyer un fichier CSV au service -->
+    <h2>Test 1 — Envoyer un fichier CSV</h2>
+    <!-- Champ pour sélectionner un fichier CSV sur son ordinateur -->
+    <input type="file" id="fichierCSV" accept=".csv" />
+    <!-- Bouton qui déclenche l'envoi du fichier -->
+    <button onclick="testerUpload()">Envoyer</button>
+    <!-- Zone d'affichage du résultat JSON -->
+    <pre id="resultat1"></pre>
+
+    <!-- Test 2 : lister les séries déjà chargées dans la base -->
+    <h2>Test 2 — Lister les séries disponibles</h2>
+    <!-- Bouton qui appelle la route GET /upload/series -->
+    <button onclick="testerSeries()">Lister</button>
+    <!-- Zone d'affichage du résultat JSON -->
+    <pre id="resultat2"></pre>
+
+    <script>
+        // Test 1 : appel de la route POST /upload/csv
+        async function testerUpload() {
+            // On récupère le fichier sélectionné par l'utilisateur
+            const fichier = document.getElementById("fichierCSV").files[0];
+
+            if (!fichier) {
+                document.getElementById("resultat1").textContent = "Sélectionne un fichier CSV d'abord !";
+                return;
+            }
+
+            // On prépare les données à envoyer (formulaire multipart)
+            const formData = new FormData();
+            formData.append("file", fichier);
+
+            // On envoie la requête POST avec le fichier
+            const res = await fetch("http://localhost:5004/upload/csv", {
+                method: "POST",
+                body: formData
+            });
+
+            // On convertit la réponse en JSON et on l'affiche
+            const data = await res.json();
+            document.getElementById("resultat1").textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Test 2 : appel de la route GET /upload/series
+        async function testerSeries() {
+            // On envoie une requête GET pour lister les séries disponibles
+            const res = await fetch("http://localhost:5004/upload/series");
+
+            // On convertit la réponse en JSON et on l'affiche
+            const data = await res.json();
+            document.getElementById("resultat2").textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
