@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tests Service 2 — Statistiques</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; background: #1e1e1e; color: #ddd; }
+        h1 { color: #61dafb; }
+        h2 { color: #aaa; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        button { background: #61dafb; color: #000; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; margin: 5px; }
+        button:hover { background: #21a1cb; }
+        .result { background: #2d2d2d; padding: 10px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #444; }
+        .ok   { border-left-color: #4caf50; }
+        .fail { border-left-color: #f44336; }
+        pre { margin: 0; white-space: pre-wrap; font-size: 13px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+        .badge.ok   { background: #4caf50; color: #fff; }
+        .badge.fail { background: #f44336; color: #fff; }
+        #resume { font-size: 16px; margin: 20px 0; padding: 10px; background: #2d2d2d; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<h1>🧪 Tests Unitaires — Service 2 Statistiques</h1>
+<p>Service sur <strong>http://localhost:5002</strong></p>
+
+<button onclick="lancerTousLesTests()">▶ Lancer tous les tests</button>
+<button onclick="document.getElementById('resultats').innerHTML=''; document.getElementById('resume').innerHTML=''">🗑 Effacer</button>
+
+<div id="resume"></div>
+<div id="resultats"></div>
+
+<script>
+const BASE = 'http://localhost:5002';
+let passés = 0, échoués = 0;
+
+async function post(url, body) {
+    const r = await fetch(BASE + url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    return { status: r.status, data: await r.json() };
+}
+
+function afficher(nom, ok, status, data, attendu) {
+    ok ? passés++ : échoués++;
+    const div = document.getElementById('resultats');
+    div.innerHTML += `
+        <div class="result ${ok ? 'ok' : 'fail'}">
+            <span class="badge ${ok ? 'ok' : 'fail'}">${ok ? '✓ PASS' : '✗ FAIL'}</span>
+            <strong> ${nom}</strong> — HTTP ${status} (attendu: ${attendu})
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>`;
+}
+
+async function lancerTousLesTests() {
+    passés = 0; échoués = 0;
+    document.getElementById('resultats').innerHTML = '';
+    document.getElementById('resume').innerHTML = '⏳ Tests en cours...';
+
+    // ── /stats/describe ──────────────────────────────────────
+    try {
+        let r = await post('/stats/describe', { data: [12.5, 15.3, 8.7, 21.0, 13.2, 9.8, 17.6, 11.4] });
+        afficher('describe — données valides', r.status === 200, r.status, r.data, 200);
+    } catch(e) { afficher('describe — données valides', false, 'ERREUR', e.message, 200); }
+
+    try {
+        let r = await post('/stats/describe', { mauvaise_cle: [1, 2, 3] });
+        afficher('describe — clé manquante', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('describe — clé manquante', false, 'ERREUR', e.message, 400); }
+
+    try {
+        let r = await post('/stats/describe', { data: [42] });
+        afficher('describe — une seule valeur', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('describe — une seule valeur', false, 'ERREUR', e.message, 400); }
+
+    // ── /stats/correlation ───────────────────────────────────
+    try {
+        let r = await post('/stats/correlation', { x: [1,2,3,4,5], y: [2,4,5,4,5] });
+        afficher('correlation — données valides', r.status === 200, r.status, r.data, 200);
+    } catch(e) { afficher('correlation — données valides', false, 'ERREUR', e.message, 200); }
+
+    try {
+        let r = await post('/stats/correlation', { x: [1,2,3], y: [4,5] });
+        afficher('correlation — tailles différentes', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('correlation — tailles différentes', false, 'ERREUR', e.message, 400); }
+
+    try {
+        let r = await post('/stats/correlation', { y: [1,2,3] });
+        afficher('correlation — x manquant', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('correlation — x manquant', false, 'ERREUR', e.message, 400); }
+
+    try {
+        let r = await post('/stats/correlation', { x: [1,2,3,4,5], y: [1,2,3,4,5] });
+        const ok = r.status === 200 && r.data.resultat.interpretation === 'forte';
+        afficher('correlation — forte positive (r=1)', ok, r.status, r.data, '200 + forte');
+    } catch(e) { afficher('correlation — forte positive', false, 'ERREUR', e.message, 200); }
+
+    // ── /stats/test_normalite ────────────────────────────────
+    try {
+        let r = await post('/stats/test_normalite', { data: [12.5, 15.3, 8.7, 21.0, 13.2, 9.8, 17.6, 11.4] });
+        afficher('normalite — données valides', r.status === 200, r.status, r.data, 200);
+    } catch(e) { afficher('normalite — données valides', false, 'ERREUR', e.message, 200); }
+
+    try {
+        let r = await post('/stats/test_normalite', { mauvaise_cle: [1,2,3] });
+        afficher('normalite — clé manquante', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('normalite — clé manquante', false, 'ERREUR', e.message, 400); }
+
+    try {
+        let r = await post('/stats/test_normalite', { data: [1] });
+        afficher('normalite — une seule valeur', r.status === 400, r.status, r.data, 400);
+    } catch(e) { afficher('normalite — une seule valeur', false, 'ERREUR', e.message, 400); }
+
+    // ── Résumé ───────────────────────────────────────────────
+    const total = passés + échoués;
+    document.getElementById('resume').innerHTML =
+        `📊 Résultat : <strong style="color:${échoués===0?'#4caf50':'#f44336'}">${passés}/${total} tests passés</strong>
+        ${échoués > 0 ? `— ${échoués} échec(s)` : '— Tous les tests sont OK ✅'}`;
+}
+</script>
+</body>
+</html>

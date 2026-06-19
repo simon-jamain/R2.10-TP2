@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
 import numpy as np
 from scipy import stats
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 def validate_data(data, key='data'):
     """Valide et retourne une liste de nombres."""
